@@ -566,9 +566,17 @@ static void change_loop_range(Function *C, Loop *L) {
           // in the outermost loop, we always take the array_size of the final value
           if (L->getParentLoop() == nullptr) {
             Builder.SetInsertPoint(Inc->getNextNode());
-            Value *final_rem = Builder.CreateSRem(Inc, array_size, "finalrem");
-            // replaces the uses of I with final_rem
-            Inc->replaceAllUsesWith(final_rem);
+	   
+	    sext = Inc; 
+	    if (!Inc->getType()->isIntegerTy(64))
+	      sext = Builder.CreateSExt(Inc, I64Ty);
+            if (!array_size->getType()->isIntegerTy(64))
+              array_size = Builder.CreateSExt(array_size, I64Ty);
+
+
+            Value *final_rem = Builder.CreateSRem(sext, array_size, "finalrem");
+	    // replaces the uses of I with final_rem
+            sext->replaceAllUsesWith(final_rem);
             cast<Instruction>(final_rem)->setOperand(0, Inc);
           }
 
